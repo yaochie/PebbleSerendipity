@@ -16,12 +16,27 @@ static TextLayer *s_latitude;
 static TextLayer *s_longitude;
 
 static AppSync s_sync;
-static uint8_t s_sync_buffer[32];
+static uint8_t s_sync_buffer[64];
 
 enum popupTypes {
     RANDOM,
     SELECTED,
 };
+
+static void get_coords() {
+    DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);
+    
+    if (!iter) {
+        return;
+    }
+    
+    int value = 1;
+    dict_write_int(iter, 1, &value, sizeof(int), true);
+    dict_write_end(iter);
+    
+    app_message_outbox_send();
+}
 
 static void random_load(Window *window) {
     Layer* window_layer = window_get_root_layer(window);
@@ -33,6 +48,8 @@ static void random_load(Window *window) {
     
     layer_add_child(window_layer, text_layer_get_layer(s_latitude));
     layer_add_child(window_layer, text_layer_get_layer(s_longitude));
+    
+    get_coords();
 }
 
 static void random_unload(Window *window) {
@@ -118,26 +135,16 @@ static void main_window_unload(Window *window) {
     text_layer_destroy(s_selected_text);
 }
 
-static void inbox_received_callback(DictionaryIterator *iter, void *context) {
-    Tuple* lat = dict_find(iter, COORDS_LAT);
-    Tuple* lon = dict_find(iter, COORDS_LONG);
-    
-    if (lat && lon) {
-        if (s_latitude && s_longitude) {
-            text_layer_set_text(s_latitude, lat->value->cstring);
-            text_layer_set_text(s_longitude, lon->value->cstring);
-        }
-    }
-}
-
 static void sync_changed_handler(const uint32_t key, const Tuple *new_tuple, const Tuple *old_tuple, void *context) {
     static char s_lat_buffer[32];
     static char s_lon_buffer[32];
     if (key == COORDS_LAT) {
         snprintf(s_lat_buffer, sizeof(s_lat_buffer), "Lat: %s", new_tuple->value->cstring);
+        //snprintf(s_lat_buffer, sizeof(s_lat_buffer), "Lat: %d", (int)new_tuple->value->uint32);
         if (s_latitude) text_layer_set_text(s_latitude, s_lat_buffer);
     } else {
         snprintf(s_lon_buffer, sizeof(s_lon_buffer), "Long: %s", new_tuple->value->cstring);
+        //snprintf(s_lon_buffer, sizeof(s_lon_buffer), "Long: %d", (int)new_tuple->value->uint32);
         if (s_longitude) text_layer_set_text(s_longitude, s_lon_buffer);
     }
 }
@@ -149,7 +156,6 @@ static void sync_error_handler(DictionaryResult dict_error, AppMessageResult app
 }
 
 static void init() {
-    //app_message_register_inbox_received(inbox_received_callback);
     
     s_main_window = window_create();
     window_set_window_handlers(s_main_window, (WindowHandlers) {

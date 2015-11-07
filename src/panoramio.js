@@ -26,8 +26,8 @@ function fetchPanoLocation() {
                 console.log("lat: " + chosenPhoto.latitude + " long: " + chosenPhoto.longitude);
                 console.log(String(chosenPhoto.latitude));
                 Pebble.sendAppMessage({
-                    0: String(chosenPhoto.latitude),
-                    '1': String(chosenPhoto.longitude)
+                    'COORDS_LAT': String(chosenPhoto.latitude),
+                    'COORDS_LONG': String(chosenPhoto.longitude)
                 });
             } else {
                 console.log("Error with request: " + req.status);
