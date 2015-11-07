@@ -1,0 +1,27 @@
+{
+    "appKeys": {
+        "COORDS_LAT": 0,
+        "COORDS_LONG": 1
+    },
+    "capabilities": [
+        "location"
+    ],
+    "companyName": "yaochisite@gmail.com",
+    "longName": "Panoramio Get",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "sdkVersion": "3",
+    "shortName": "Panoramio Get",
+    "targetPlatforms": [
+        "aplite",
+        "basalt",
+        "chalk"
+    ],
+    "uuid": "218a8d04-06e8-4835-b8e9-2349d1eed1e2",
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
