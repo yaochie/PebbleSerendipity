@@ -1,7 +1,11 @@
 #include <pebble.h>
 
-#define COORDS_LAT 0
-#define COORDS_LONG 1
+#define INIT_DIRECTIONS 0
+#define UPDATE_INSTRUCTIONS 1
+
+#define COORDS_LAT 10
+#define COORDS_LONG 11
+#define DIRECTIONS 12
 
 static Window *s_main_window;
 static SimpleMenuLayer *s_main_menu_layer;
@@ -19,6 +23,9 @@ static TextLayer *s_random_placeholder;
 static char s_lat_buffer[32];
 static char s_lon_buffer[32];
 
+static AppSync s_sync;
+static uint8_t s_sync_buffer[64];
+
 enum popupTypes {
     RANDOM,
     SELECTED,
@@ -33,27 +40,10 @@ static void get_coords() {
     }
     
     int value = 1;
-    dict_write_int(iter, 1, &value, sizeof(int), true);
+    dict_write_int(iter, INIT_DIRECTIONS, &value, sizeof(int), true);
     dict_write_end(iter);
     
     app_message_outbox_send();
-}
-
-static void receive_pano_coords(DictionaryIterator *iterator, void *context) {
-    Tuple *lat = dict_find(iterator, COORDS_LAT);
-    Tuple *lon = dict_find(iterator, COORDS_LONG);
-    bool loadedCoords = false;
-    if (lat) {
-        snprintf(s_lat_buffer, sizeof(s_lat_buffer), "Lat: %s", lat->value->cstring);
-        if (s_latitude) text_layer_set_text(s_latitude, s_lat_buffer);
-        loadedCoords = true;
-    }
-    if (lon) {
-        snprintf(s_lon_buffer, sizeof(s_lon_buffer), "Long: %s", lon->value->cstring);
-        if (s_longitude) text_layer_set_text(s_longitude, s_lon_buffer);
-        loadedCoords = true;
-    }
-    if (loadedCoords && s_random_placeholder) text_layer_set_text(s_random_placeholder, "");
 }
 
 static void random_load(Window *window) {
@@ -75,7 +65,6 @@ static void random_load(Window *window) {
     layer_add_child(window_layer, text_layer_get_layer(s_longitude));
     layer_add_child(window_layer, text_layer_get_layer(s_random_placeholder));
     
-    app_message_register_inbox_received(&receive_pano_coords);
     get_coords();
 }
 
@@ -83,7 +72,6 @@ static void random_unload(Window *window) {
     text_layer_destroy(s_latitude);
     text_layer_destroy(s_longitude);
     text_layer_destroy(s_random_placeholder);
-    app_message_deregister_callbacks();
 }
 
 static void selected_load(Window *window) {
@@ -143,6 +131,33 @@ static void init_menu() {
     s_menu_list.items = items;
 }
 
+static void sync_changed_handler(const uint32_t key, const Tuple *new_tuple, const Tuple *old_tuple, void *context) {
+    bool loadedCoords = false;
+    
+    switch(key) {
+    case COORDS_LAT:
+        if (strlen(new_tuple->value->cstring) > 0 && strncmp(new_tuple->value->cstring, old_tuple->value->cstring, 32) != 0) {
+            snprintf(s_lat_buffer, sizeof(s_lat_buffer), "Lat: %s", new_tuple->value->cstring);
+            if (s_latitude) text_layer_set_text(s_latitude, s_lat_buffer);
+            loadedCoords = true;
+        }
+        break;
+    case COORDS_LONG:
+        if (strlen(new_tuple->value->cstring) > 0  && strncmp(new_tuple->value->cstring, old_tuple->value->cstring, 32) != 0) {
+            snprintf(s_lon_buffer, sizeof(s_lon_buffer), "Long: %s", new_tuple->value->cstring);
+            if (s_longitude) text_layer_set_text(s_longitude, s_lon_buffer);
+            loadedCoords = true;
+        }
+        break;
+    default:
+        break;
+    }
+    if (loadedCoords && s_random_placeholder) text_layer_set_text(s_random_placeholder, "");
+}
+
+static void sync_error_handler(DictionaryResult dict_error, AppMessageResult app_message_error, void *context) {
+}
+
 static void main_window_load(Window *window) {
     //load main menu
     Layer* window_layer = window_get_root_layer(window);
@@ -157,6 +172,12 @@ static void main_window_load(Window *window) {
         layer_add_child(window_layer, simple_menu_layer_get_layer(s_main_menu_layer));
         layer_add_child(window_layer, text_layer_get_layer(s_selected_text));
     }
+    
+    Tuplet initial_values[] = {
+        TupletCString(COORDS_LAT, ""),
+        TupletCString(COORDS_LONG, ""),
+    };
+    app_sync_init(&s_sync, s_sync_buffer, sizeof(s_sync_buffer), initial_values, ARRAY_LENGTH(initial_values), sync_changed_handler, sync_error_handler, NULL);
 }
 
 static void main_window_unload(Window *window) {
@@ -173,12 +194,14 @@ static void init() {
     });
     
     app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
-    
+
+
     window_stack_push(s_main_window, true);
 }
 
 static void deinit() {
     window_destroy(s_main_window);
+    app_sync_deinit(&s_sync);
 }
 
 int main(void) {

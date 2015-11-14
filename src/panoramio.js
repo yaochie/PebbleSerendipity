@@ -1,9 +1,33 @@
 var range;
 var coordinates;
 var key = "AIzaSyDBqEPiSyCPvIKrVneA95F-yOj3ib-d02I";
+var navInstructions;
+var instructionCounter;
 
 function setRange(newRange) {
     range = newRange;
+}
+
+function beginNavigation(route) {
+    instructionCounter = 0;
+    var warnings = route.warnings;
+    console.log("warnings: " + JSON.stringify(warnings));
+    navInstructions = route.legs[0].steps;
+    var endAddress = route.legs[0].end_address;
+    console.log(endAddress);
+    for (var i=0; i<navInstructions.length; i++) {
+        console.log(navInstructions[i].html_instructions);
+    }
+    updateInstructions();
+}
+
+function updateInstructions() {
+    if (instructionCounter < navInstructions.length) {
+        Pebble.sendAppMessage({
+            'DIRECTION': String(navInstructions[instructionCounter].html_instructions)
+        });
+        instructionCounter++;
+    }
 }
 
 function navigate(destination) {
@@ -17,17 +41,11 @@ function navigate(destination) {
             if (req.status == 200) {                
                 var response = JSON.parse(req.responseText);
                 if (response.status == "OK") {
-                    var route = response.routes[0];
-                    var warnings = route.warnings;
-                    console.log("warnings: " + JSON.stringify(warnings));
-                    var steps = route.legs[0].steps;
-                    var endAddress = route.legs[0].end_address;
-                    console.log(endAddress);
-                    for (var i=0; i<steps.length; i++) {
-                        console.log(steps[i].html_instructions);
-                    }
+                    beginNavigation(response.routes[0]);                    
                 } else if (response.status == "ZERO_RESULTS") {
                     //find a new location
+                } else {
+                    //other error, find new location?
                 }
             }
         }
@@ -87,6 +105,10 @@ Pebble.addEventListener("ready", function(e) {
 
 Pebble.addEventListener("appmessage", function(e) {
     //handle app message
-    console.log("Got message: " + JSON.stringify(e));
-    navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
+    console.log("Got message: " + JSON.stringify(e.payload));
+    if ('INIT_DIRECTIONS' in e.payload) {
+        navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
+    } else if ('UPDATE_INSTRUCTIONS' in e.payload) {
+        updateInstructions();
+    }
 });
