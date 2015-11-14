@@ -24,7 +24,6 @@ function fetchPanoLocation() {
                 var chosenPhoto = response.photos[Math.floor(Math.random() * numPhotos)];
                 console.log(response.count);
                 console.log("lat: " + chosenPhoto.latitude + " long: " + chosenPhoto.longitude);
-                console.log(String(chosenPhoto.latitude));
                 Pebble.sendAppMessage({
                     'COORDS_LAT': String(chosenPhoto.latitude),
                     'COORDS_LONG': String(chosenPhoto.longitude)
@@ -52,7 +51,6 @@ var locationOptions = {'timeout': 10000, 'maximumAge': 60000};
 Pebble.addEventListener("ready", function(e) {
     console.log('Javascript app ready and running!');
     setRange(0.5);
-    navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
 });
 
 Pebble.addEventListener("appmessage", function(e) {

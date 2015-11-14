@@ -14,9 +14,10 @@ static Window *s_popup_window;
 static TextLayer *s_popup_text;
 static TextLayer *s_latitude;
 static TextLayer *s_longitude;
+static TextLayer *s_random_placeholder;
 
-static AppSync s_sync;
-static uint8_t s_sync_buffer[64];
+static char s_lat_buffer[32];
+static char s_lon_buffer[32];
 
 enum popupTypes {
     RANDOM,
@@ -38,6 +39,23 @@ static void get_coords() {
     app_message_outbox_send();
 }
 
+static void receive_pano_coords(DictionaryIterator *iterator, void *context) {
+    Tuple *lat = dict_find(iterator, COORDS_LAT);
+    Tuple *lon = dict_find(iterator, COORDS_LONG);
+    bool loadedCoords = false;
+    if (lat) {
+        snprintf(s_lat_buffer, sizeof(s_lat_buffer), "Lat: %s", lat->value->cstring);
+        if (s_latitude) text_layer_set_text(s_latitude, s_lat_buffer);
+        loadedCoords = true;
+    }
+    if (lon) {
+        snprintf(s_lon_buffer, sizeof(s_lon_buffer), "Long: %s", lon->value->cstring);
+        if (s_longitude) text_layer_set_text(s_longitude, s_lon_buffer);
+        loadedCoords = true;
+    }
+    if (loadedCoords && s_random_placeholder) text_layer_set_text(s_random_placeholder, "");
+}
+
 static void random_load(Window *window) {
     Layer* window_layer = window_get_root_layer(window);
     
@@ -45,16 +63,27 @@ static void random_load(Window *window) {
     s_longitude = text_layer_create(GRect(0, 50, 144, 50));
     text_layer_set_background_color(s_latitude, GColorClear);
     text_layer_set_background_color(s_longitude, GColorClear);
+    text_layer_set_font(s_latitude, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+    text_layer_set_font(s_longitude, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+    
+    s_random_placeholder = text_layer_create(GRect(0, 40, 144, 80));
+    text_layer_set_background_color(s_random_placeholder, GColorClear);
+    text_layer_set_font(s_random_placeholder, fonts_get_system_font(FONT_KEY_GOTHIC_28));
+    text_layer_set_text(s_random_placeholder, "Getting random location...");
     
     layer_add_child(window_layer, text_layer_get_layer(s_latitude));
     layer_add_child(window_layer, text_layer_get_layer(s_longitude));
+    layer_add_child(window_layer, text_layer_get_layer(s_random_placeholder));
     
+    app_message_register_inbox_received(&receive_pano_coords);
     get_coords();
 }
 
 static void random_unload(Window *window) {
     text_layer_destroy(s_latitude);
     text_layer_destroy(s_longitude);
+    text_layer_destroy(s_random_placeholder);
+    app_message_deregister_callbacks();
 }
 
 static void selected_load(Window *window) {
@@ -62,6 +91,7 @@ static void selected_load(Window *window) {
     
     s_popup_text = text_layer_create(layer_get_bounds(window_layer));
     text_layer_set_background_color(s_popup_text, GColorClear);
+    text_layer_set_font(s_popup_text, fonts_get_system_font(FONT_KEY_GOTHIC_28));
     
     text_layer_set_text(s_popup_text, "User choice has been selected!");
     
@@ -135,28 +165,7 @@ static void main_window_unload(Window *window) {
     text_layer_destroy(s_selected_text);
 }
 
-static void sync_changed_handler(const uint32_t key, const Tuple *new_tuple, const Tuple *old_tuple, void *context) {
-    static char s_lat_buffer[32];
-    static char s_lon_buffer[32];
-    if (key == COORDS_LAT) {
-        snprintf(s_lat_buffer, sizeof(s_lat_buffer), "Lat: %s", new_tuple->value->cstring);
-        //snprintf(s_lat_buffer, sizeof(s_lat_buffer), "Lat: %d", (int)new_tuple->value->uint32);
-        if (s_latitude) text_layer_set_text(s_latitude, s_lat_buffer);
-    } else {
-        snprintf(s_lon_buffer, sizeof(s_lon_buffer), "Long: %s", new_tuple->value->cstring);
-        //snprintf(s_lon_buffer, sizeof(s_lon_buffer), "Long: %d", (int)new_tuple->value->uint32);
-        if (s_longitude) text_layer_set_text(s_longitude, s_lon_buffer);
-    }
-}
-
-static void sync_error_handler(DictionaryResult dict_error, AppMessageResult app_message_error, void *context) {
-    APP_LOG(APP_LOG_LEVEL_ERROR, "Sync error!");
-    APP_LOG(APP_LOG_LEVEL_ERROR, "Dict code: %d", (int)dict_error);
-    APP_LOG(APP_LOG_LEVEL_ERROR, "AppMessage code: %d", (int)app_message_error);
-}
-
 static void init() {
-    
     s_main_window = window_create();
     window_set_window_handlers(s_main_window, (WindowHandlers) {
         .load = main_window_load,
@@ -165,18 +174,11 @@ static void init() {
     
     app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
     
-    Tuplet initial_values[] = {
-        TupletCString(COORDS_LAT, "0"),
-        TupletCString(COORDS_LONG, "0"),
-    };
-    
     window_stack_push(s_main_window, true);
-    app_sync_init(&s_sync, s_sync_buffer, sizeof(s_sync_buffer), initial_values, ARRAY_LENGTH(initial_values), sync_changed_handler, sync_error_handler, NULL);
 }
 
 static void deinit() {
     window_destroy(s_main_window);
-    app_sync_deinit(&s_sync);
 }
 
 int main(void) {
