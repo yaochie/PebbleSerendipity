@@ -2,7 +2,9 @@
     "appKeys": {
         "COORDS_LAT": 10,
         "COORDS_LONG": 11,
+        "DESTINATION": 13,
         "DIRECTIONS": 12,
+        "GET_LOCATION": 2,
         "INIT_DIRECTIONS": 0,
         "UPDATE_INSTRUCTIONS": 1
     },

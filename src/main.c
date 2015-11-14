@@ -2,10 +2,12 @@
 
 #define INIT_DIRECTIONS 0
 #define UPDATE_INSTRUCTIONS 1
+#define GET_LOCATION 2
 
 #define COORDS_LAT 10
 #define COORDS_LONG 11
 #define DIRECTIONS 12
+#define DESTINATION 13
 
 static Window *s_main_window;
 static SimpleMenuLayer *s_main_menu_layer;
@@ -20,11 +22,16 @@ static TextLayer *s_latitude;
 static TextLayer *s_longitude;
 static TextLayer *s_random_placeholder;
 
+static TextLayer *s_destination;
+static TextLayer *s_current_instruction;
+
 static char s_lat_buffer[32];
 static char s_lon_buffer[32];
+static char s_destination_buffer[64];
+static char s_current_instruction_buffer[128];
 
 static AppSync s_sync;
-static uint8_t s_sync_buffer[64];
+static uint8_t s_sync_buffer[128];
 
 enum popupTypes {
     RANDOM,
@@ -46,6 +53,21 @@ static void get_coords() {
     app_message_outbox_send();
 }
 
+static void update_current_location() {
+    DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);
+    
+    if (!iter) {
+        return;
+    }
+    
+    int value = 1;
+    dict_write_int(iter, UPDATE_INSTRUCTIONS, &value, sizeof(int), true);
+    dict_write_end(iter);
+    
+    app_message_outbox_send();
+}
+
 static void random_load(Window *window) {
     Layer* window_layer = window_get_root_layer(window);
     
@@ -61,9 +83,18 @@ static void random_load(Window *window) {
     text_layer_set_font(s_random_placeholder, fonts_get_system_font(FONT_KEY_GOTHIC_28));
     text_layer_set_text(s_random_placeholder, "Getting random location...");
     
+    s_destination = text_layer_create(GRect(0, 0, 144, 40));
+    s_current_instruction = text_layer_create(GRect(0, 50, 144, 128));
+    text_layer_set_background_color(s_destination, GColorClear);
+    text_layer_set_background_color(s_current_instruction, GColorClear);
+    text_layer_set_font(s_destination, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_font(s_current_instruction, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    
     layer_add_child(window_layer, text_layer_get_layer(s_latitude));
     layer_add_child(window_layer, text_layer_get_layer(s_longitude));
     layer_add_child(window_layer, text_layer_get_layer(s_random_placeholder));
+    layer_add_child(window_layer, text_layer_get_layer(s_destination));
+    layer_add_child(window_layer, text_layer_get_layer(s_current_instruction));
     
     get_coords();
 }
@@ -72,6 +103,8 @@ static void random_unload(Window *window) {
     text_layer_destroy(s_latitude);
     text_layer_destroy(s_longitude);
     text_layer_destroy(s_random_placeholder);
+    text_layer_destroy(s_destination);
+    text_layer_destroy(s_current_instruction);
 }
 
 static void selected_load(Window *window) {
@@ -143,10 +176,22 @@ static void sync_changed_handler(const uint32_t key, const Tuple *new_tuple, con
         }
         break;
     case COORDS_LONG:
-        if (strlen(new_tuple->value->cstring) > 0  && strncmp(new_tuple->value->cstring, old_tuple->value->cstring, 32) != 0) {
+        if (strlen(new_tuple->value->cstring) > 0 && strncmp(new_tuple->value->cstring, old_tuple->value->cstring, 32) != 0) {
             snprintf(s_lon_buffer, sizeof(s_lon_buffer), "Long: %s", new_tuple->value->cstring);
             if (s_longitude) text_layer_set_text(s_longitude, s_lon_buffer);
             loadedCoords = true;
+        }
+        break;
+    case DIRECTIONS:
+        if (strlen(new_tuple->value->cstring) > 0 && strncmp(new_tuple->value->cstring, old_tuple->value->cstring, 128) != 0) {
+            snprintf(s_current_instruction_buffer, sizeof(s_current_instruction_buffer), "%s", new_tuple->value->cstring);
+            if (s_current_instruction) text_layer_set_text(s_current_instruction, s_current_instruction_buffer);
+        }
+        break;
+    case DESTINATION:
+        if (strlen(new_tuple->value->cstring) > 0 && strncmp(new_tuple->value->cstring, old_tuple->value->cstring, 64) != 0) {
+            snprintf(s_destination_buffer, sizeof(s_destination_buffer), "%s", new_tuple->value->cstring);
+            if (s_destination) text_layer_set_text(s_destination, s_destination_buffer);
         }
         break;
     default:
@@ -176,6 +221,8 @@ static void main_window_load(Window *window) {
     Tuplet initial_values[] = {
         TupletCString(COORDS_LAT, ""),
         TupletCString(COORDS_LONG, ""),
+        TupletCString(DIRECTIONS, ""),
+        TupletCString(DESTINATION, ""),
     };
     app_sync_init(&s_sync, s_sync_buffer, sizeof(s_sync_buffer), initial_values, ARRAY_LENGTH(initial_values), sync_changed_handler, sync_error_handler, NULL);
 }
@@ -194,8 +241,6 @@ static void init() {
     });
     
     app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
-
-
     window_stack_push(s_main_window, true);
 }
 

@@ -2,7 +2,7 @@ var range;
 var coordinates;
 var key = "AIzaSyDBqEPiSyCPvIKrVneA95F-yOj3ib-d02I";
 var navInstructions;
-var instructionCounter;
+var instructionCounter = -1;
 
 function setRange(newRange) {
     range = newRange;
@@ -18,13 +18,16 @@ function beginNavigation(route) {
     for (var i=0; i<navInstructions.length; i++) {
         console.log(navInstructions[i].html_instructions);
     }
+    Pebble.sendAppMessage({
+        'DESTINATION': String(endAddress)
+    });
     updateInstructions();
 }
 
 function updateInstructions() {
     if (instructionCounter < navInstructions.length) {
         Pebble.sendAppMessage({
-            'DIRECTION': String(navInstructions[instructionCounter].html_instructions)
+            'DIRECTIONS': String(navInstructions[instructionCounter].html_instructions)
         });
         instructionCounter++;
     }
@@ -66,7 +69,7 @@ function fetchPanoLocation() {
     req.onload = function(e) {
         if (req.readyState == req.DONE) {
             if (req.status == 200) {
-                console.log("received: " + req.responseText);
+                //console.log("received: " + req.responseText);
                 
                 var response = JSON.parse(req.responseText);
                 var chosenPhoto = response.photos[Math.floor(Math.random() * numPhotos)];
@@ -96,6 +99,28 @@ function locationError(err) {
     //send blank result?
 }
 
+function nearWaypoint() {
+    if (instructionCounter > -1) {
+        var curr = coordinates;
+        var target = navInstructions[instructionCounter].start_location;
+        if (Math.sqrt((curr.latitude - target.lat)^2 + (curr.longitude - target.lng)^2) < 0.00001) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function updateLocSuccess(pos) {
+    coordinates = pos.coords;
+    if (nearWaypoint()) {
+        updateInstructions();
+    }
+}
+
+function updateLocError(err) {
+    console.warn("Location error (" + err.code + "): " + err.message);
+}
+
 var locationOptions = {'timeout': 10000, 'maximumAge': 60000};
 
 Pebble.addEventListener("ready", function(e) {
@@ -110,5 +135,7 @@ Pebble.addEventListener("appmessage", function(e) {
         navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
     } else if ('UPDATE_INSTRUCTIONS' in e.payload) {
         updateInstructions();
+    } else if ('GET_LOCATION' in e.payload) {
+        navigator.geolocation.getCurrentPosition(updateLocSuccess, updateLocError, locationOptions);
     }
 });
