@@ -4,8 +4,16 @@ var key = "AIzaSyDBqEPiSyCPvIKrVneA95F-yOj3ib-d02I";
 var navInstructions;
 var instructionCounter = -1;
 
+var updateLocOptions = {'timeout': 30000, 'maximumAge': 60000};
+var locationOptions = {'timeout': 10000, 'maximumAge': 60000};
+
 function setRange(newRange) {
     range = newRange;
+}
+
+function stripHtmlTags(str) {
+    //note: not secure, only works on GMaps html instructions, not in general
+    return str.replace(/<\/?[^>]+(>|$)/g, "");
 }
 
 function beginNavigation(route) {
@@ -15,20 +23,17 @@ function beginNavigation(route) {
     navInstructions = route.legs[0].steps;
     var endAddress = route.legs[0].end_address;
     console.log(endAddress);
-    for (var i=0; i<navInstructions.length; i++) {
-        console.log(navInstructions[i].html_instructions);
-    }
-    Pebble.sendAppMessage({
-        'DESTINATION': String(endAddress)
-    });
-    updateInstructions();
+    updateInstructions(endAddress);
+    navigator.geolocation.watchPosition(updateLocSuccess, updateLocError, updateLocOptions);
 }
 
-function updateInstructions() {
-    if (instructionCounter < navInstructions.length) {
+function updateInstructions(destination) {
+    if (instructionCounter < navInstructions.length) { 
         Pebble.sendAppMessage({
-            'DIRECTIONS': String(navInstructions[instructionCounter].html_instructions)
+            'DESTINATION': String(destination),
+            'DIRECTIONS': stripHtmlTags(String(navInstructions[instructionCounter].html_instructions))
         });
+        console.log("sent instructions: " + stripHtmlTags(navInstructions[instructionCounter].html_instructions));
         instructionCounter++;
     }
 }
@@ -120,8 +125,6 @@ function updateLocSuccess(pos) {
 function updateLocError(err) {
     console.warn("Location error (" + err.code + "): " + err.message);
 }
-
-var locationOptions = {'timeout': 10000, 'maximumAge': 60000};
 
 Pebble.addEventListener("ready", function(e) {
     console.log('Javascript app ready and running!');

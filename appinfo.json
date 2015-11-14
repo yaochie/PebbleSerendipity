@@ -12,13 +12,13 @@
         "location"
     ],
     "companyName": "yaochisite@gmail.com",
-    "longName": "Panoramio Get",
+    "longName": "Serendipity",
     "projectType": "native",
     "resources": {
         "media": []
     },
     "sdkVersion": "3",
-    "shortName": "Panoramio Get",
+    "shortName": "Serendipity",
     "targetPlatforms": [
         "aplite",
         "basalt",

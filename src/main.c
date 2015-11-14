@@ -31,7 +31,7 @@ static char s_destination_buffer[64];
 static char s_current_instruction_buffer[128];
 
 static AppSync s_sync;
-static uint8_t s_sync_buffer[128];
+static uint8_t s_sync_buffer[256];
 
 enum popupTypes {
     RANDOM,
@@ -71,20 +71,20 @@ static void update_current_location() {
 static void random_load(Window *window) {
     Layer* window_layer = window_get_root_layer(window);
     
-    s_latitude = text_layer_create(GRect(0, 0, 144, 50));
-    s_longitude = text_layer_create(GRect(0, 50, 144, 50));
+    s_latitude = text_layer_create(GRect(0, 120, 144, 20));
+    s_longitude = text_layer_create(GRect(0, 135, 144, 28));
     text_layer_set_background_color(s_latitude, GColorClear);
     text_layer_set_background_color(s_longitude, GColorClear);
-    text_layer_set_font(s_latitude, fonts_get_system_font(FONT_KEY_GOTHIC_18));
-    text_layer_set_font(s_longitude, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+    text_layer_set_font(s_latitude, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+    text_layer_set_font(s_longitude, fonts_get_system_font(FONT_KEY_GOTHIC_14));
     
     s_random_placeholder = text_layer_create(GRect(0, 40, 144, 80));
     text_layer_set_background_color(s_random_placeholder, GColorClear);
     text_layer_set_font(s_random_placeholder, fonts_get_system_font(FONT_KEY_GOTHIC_28));
     text_layer_set_text(s_random_placeholder, "Getting random location...");
     
-    s_destination = text_layer_create(GRect(0, 0, 144, 40));
-    s_current_instruction = text_layer_create(GRect(0, 50, 144, 128));
+    s_destination = text_layer_create(GRect(0, 0, 144, 50));
+    s_current_instruction = text_layer_create(GRect(0, 50, 144, 70));
     text_layer_set_background_color(s_destination, GColorClear);
     text_layer_set_background_color(s_current_instruction, GColorClear);
     text_layer_set_font(s_destination, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
@@ -201,6 +201,8 @@ static void sync_changed_handler(const uint32_t key, const Tuple *new_tuple, con
 }
 
 static void sync_error_handler(DictionaryResult dict_error, AppMessageResult app_message_error, void *context) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Dictionary Error: %d", dict_error);
+    APP_LOG(APP_LOG_LEVEL_ERROR, "App Message Error: %d", app_message_error);
 }
 
 static void main_window_load(Window *window) {
