@@ -1,8 +1,38 @@
 var range;
 var coordinates;
+var key = "AIzaSyDBqEPiSyCPvIKrVneA95F-yOj3ib-d02I";
 
 function setRange(newRange) {
     range = newRange;
+}
+
+function navigate(destination) {
+    var req = new XMLHttpRequest();
+    req.open('GET', "https://maps.googleapis.com/maps/api/directions/json?" +
+             "origin=" + coordinates.latitude + "," + coordinates.longitude +
+             "&destination=" + destination.lat + "," + destination.long +
+             "&key=" + key + "&mode=walking");
+    req.onload = function(e) {
+        if (req.readyState == req.DONE) {
+            if (req.status == 200) {
+                //console.log("received: " + req.responseText);
+                
+                var response = JSON.parse(req.responseText);
+                if (response.status == "OK") {
+                    var route = response.routes[0];
+                    var warnings = route.warnings;
+                    console.log("warnings: " + JSON.stringify(warnings));
+                    var steps = route.legs[0].steps;
+                    var endAddress = route.legs[0].end_address;
+                    console.log(endAddress);
+                    for (var i=0; i<steps.length; i++) {
+                        console.log(steps[i].html_instructions);
+                    }
+                }
+            }
+        }
+    };
+    req.send(null);
 }
 
 function fetchPanoLocation() {    
@@ -28,6 +58,8 @@ function fetchPanoLocation() {
                     'COORDS_LAT': String(chosenPhoto.latitude),
                     'COORDS_LONG': String(chosenPhoto.longitude)
                 });
+                var endpoint = {'lat': chosenPhoto.latitude, 'long': chosenPhoto.longitude};
+                navigate(endpoint);
             } else {
                 console.log("Error with request: " + req.status);
             }
