@@ -14,9 +14,7 @@ function navigate(destination) {
              "&key=" + key + "&mode=walking");
     req.onload = function(e) {
         if (req.readyState == req.DONE) {
-            if (req.status == 200) {
-                //console.log("received: " + req.responseText);
-                
+            if (req.status == 200) {                
                 var response = JSON.parse(req.responseText);
                 if (response.status == "OK") {
                     var route = response.routes[0];
@@ -28,6 +26,8 @@ function navigate(destination) {
                     for (var i=0; i<steps.length; i++) {
                         console.log(steps[i].html_instructions);
                     }
+                } else if (response.status == "ZERO_RESULTS") {
+                    //find a new location
                 }
             }
         }
