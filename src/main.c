@@ -1,10 +1,8 @@
 #include <pebble.h>
 
 #define INIT_DIRECTIONS 0
-#define UPDATE_INSTRUCTIONS 1
-#define GET_LOCATION 2
-#define NEXT_INSTRUCTION 3
-#define PREV_INSTRUCTION 4
+#define NEXT_INSTRUCTION 1
+#define PREV_INSTRUCTION 2
 
 #define COORDS_LAT 10
 #define COORDS_LONG 11
@@ -85,8 +83,8 @@ static void random_load(Window *window) {
     text_layer_set_font(s_random_placeholder, fonts_get_system_font(FONT_KEY_GOTHIC_28));
     text_layer_set_text(s_random_placeholder, "Getting random location...");
     
-    s_destination = text_layer_create(GRect(0, 0, 144, 50));
-    s_current_instruction = text_layer_create(GRect(0, 50, 144, 70));
+    s_destination = text_layer_create(GRect(0, 0, 144, 40));
+    s_current_instruction = text_layer_create(GRect(0, 40, 144, 70));
     text_layer_set_background_color(s_destination, GColorClear);
     text_layer_set_background_color(s_current_instruction, GColorClear);
     text_layer_set_font(s_destination, fonts_get_system_font(FONT_KEY_GOTHIC_14));

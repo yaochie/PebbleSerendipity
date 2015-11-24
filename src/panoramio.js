@@ -4,7 +4,6 @@ var key = "AIzaSyDBqEPiSyCPvIKrVneA95F-yOj3ib-d02I";
 var navInstructions;
 var instructionCounter = -1;
 
-var updateLocOptions = {'timeout': 30000, 'maximumAge': 60000};
 var locationOptions = {'timeout': 10000, 'maximumAge': 60000};
 
 function setRange(newRange) {
@@ -17,34 +16,27 @@ function stripHtmlTags(str) {
 }
 
 function beginNavigation(route) {
-    instructionCounter = -1;
+    instructionCounter = 0;
     var warnings = route.warnings;
     console.log("warnings: " + JSON.stringify(warnings));
     navInstructions = route.legs[0].steps;
     var endAddress = route.legs[0].end_address;
     console.log(endAddress);
-    sendNextInstruction(endAddress);
-    navigator.geolocation.watchPosition(updateLocSuccess, updateLocError, updateLocOptions);
+    sendCurrInstruction(endAddress);
 }
 
-function sendPrevInstruction(destination) {
-    instructionCounter--;
-    if (instructionCounter >= 0) {
-        Pebble.sendAppMessage({
-            'DESTINATION': String(destination),
-            'DIRECTIONS': stripHtmlTags(String(navInstructions[instructionCounter].html_instructions))
-        });
-        console.log("sent instructions: " + stripHtmlTags(navInstructions[instructionCounter].html_instructions));
-    }
-}
-
-function sendNextInstruction(destination) {
-    instructionCounter++;
-    if (instructionCounter < navInstructions.length) { 
-        Pebble.sendAppMessage({
-            'DESTINATION': String(destination),
-            'DIRECTIONS': stripHtmlTags(String(navInstructions[instructionCounter].html_instructions))
-        });
+function sendCurrInstruction(destination) {
+    if (instructionCounter >= 0 && instructionCounter < navInstructions.length) {
+        if (destination) {
+            Pebble.sendAppMessage({
+                'DESTINATION': String(destination),
+                'DIRECTIONS': stripHtmlTags(String(navInstructions[instructionCounter].html_instructions))
+            });
+        } else {
+            Pebble.sendAppMessage({
+                'DIRECTIONS': stripHtmlTags(String(navInstructions[instructionCounter].html_instructions))
+            });
+        }
         console.log("sent instructions: " + stripHtmlTags(navInstructions[instructionCounter].html_instructions));
     }
 }
@@ -89,6 +81,7 @@ function fetchPanoLocation() {
                 
                 var response = JSON.parse(req.responseText);
                 var chosenPhoto = response.photos[Math.floor(Math.random() * numPhotos)];
+                //note: need to handle error where no lat and long provided
                 console.log(response.count);
                 console.log("lat: " + chosenPhoto.latitude + " long: " + chosenPhoto.longitude);
                 Pebble.sendAppMessage({
@@ -115,27 +108,6 @@ function locationError(err) {
     //send blank result?
 }
 
-function nearWaypoint() {
-    if (instructionCounter > -1) {
-        var curr = coordinates;
-        var target = navInstructions[instructionCounter].start_location;
-        if (Math.sqrt((curr.latitude - target.lat)^2 + (curr.longitude - target.lng)^2) < 0.00001) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function updateLocSuccess(pos) {
-    coordinates = pos.coords;
-    if (nearWaypoint()) {
-        //sendNextInstruction();
-    }
-}
-
-function updateLocError(err) {
-    console.warn("Location error (" + err.code + "): " + err.message);
-}
 
 Pebble.addEventListener("ready", function(e) {
     console.log('Javascript app ready and running!');
@@ -147,13 +119,11 @@ Pebble.addEventListener("appmessage", function(e) {
     console.log("Got message: " + JSON.stringify(e.payload));
     if ('INIT_DIRECTIONS' in e.payload) {
         navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
-    } else if ('UPDATE_INSTRUCTIONS' in e.payload) {
-        sendNextInstruction();
-    } else if ('GET_LOCATION' in e.payload) {
-        navigator.geolocation.getCurrentPosition(updateLocSuccess, updateLocError, locationOptions);
     } else if ('NEXT_INSTRUCTION' in e.payload) {
-        sendNextInstruction();
+        instructionCounter++;
+        sendCurrInstruction();
     } else if ('PREV_INSTRUCTION' in e.payload) {
-        sendPrevInstruction();
+        instructionCounter++;
+        sendCurrInstruction();
     }
 });
