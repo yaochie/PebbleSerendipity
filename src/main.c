@@ -3,6 +3,8 @@
 #define INIT_DIRECTIONS 0
 #define UPDATE_INSTRUCTIONS 1
 #define GET_LOCATION 2
+#define NEXT_INSTRUCTION 3
+#define PREV_INSTRUCTION 4
 
 #define COORDS_LAT 10
 #define COORDS_LONG 11
@@ -38,7 +40,7 @@ enum popupTypes {
     SELECTED,
 };
 
-static void get_coords() {
+static void send_message(int messageVal) {
     DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
     
@@ -46,26 +48,26 @@ static void get_coords() {
         return;
     }
     
-    int value = 1;
-    dict_write_int(iter, INIT_DIRECTIONS, &value, sizeof(int), true);
+    int value = 0; //not important, key value (messageVal) is the actual payload
+    dict_write_int(iter, messageVal, &value, sizeof(int), true);
     dict_write_end(iter);
     
     app_message_outbox_send();
 }
 
-static void update_current_location() {
-    DictionaryIterator *iter;
-    app_message_outbox_begin(&iter);
-    
-    if (!iter) {
-        return;
-    }
-    
-    int value = 1;
-    dict_write_int(iter, UPDATE_INSTRUCTIONS, &value, sizeof(int), true);
-    dict_write_end(iter);
-    
-    app_message_outbox_send();
+static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
+    //get previous instruction
+    send_message(PREV_INSTRUCTION);
+}
+
+static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
+    //get next instruction
+    send_message(NEXT_INSTRUCTION);
+}
+
+static void popup_random_click_config_provider(void *context) {
+    window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
+    window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
 }
 
 static void random_load(Window *window) {
@@ -87,8 +89,8 @@ static void random_load(Window *window) {
     s_current_instruction = text_layer_create(GRect(0, 50, 144, 70));
     text_layer_set_background_color(s_destination, GColorClear);
     text_layer_set_background_color(s_current_instruction, GColorClear);
-    text_layer_set_font(s_destination, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
-    text_layer_set_font(s_current_instruction, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_font(s_destination, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+    text_layer_set_font(s_current_instruction, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
     
     layer_add_child(window_layer, text_layer_get_layer(s_latitude));
     layer_add_child(window_layer, text_layer_get_layer(s_longitude));
@@ -96,7 +98,7 @@ static void random_load(Window *window) {
     layer_add_child(window_layer, text_layer_get_layer(s_destination));
     layer_add_child(window_layer, text_layer_get_layer(s_current_instruction));
     
-    get_coords();
+    send_message(INIT_DIRECTIONS);
 }
 
 static void random_unload(Window *window) {
@@ -130,6 +132,7 @@ static void init_popup_window(enum popupTypes type) {
             .load = random_load,
             .unload = random_unload,
         });
+        window_set_click_config_provider(s_popup_window, popup_random_click_config_provider);
     } else if (type == SELECTED) {
         window_set_window_handlers(s_popup_window, (WindowHandlers) {
             .load = selected_load,

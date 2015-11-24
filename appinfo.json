@@ -6,6 +6,8 @@
         "DIRECTIONS": 12,
         "GET_LOCATION": 2,
         "INIT_DIRECTIONS": 0,
+        "NEXT_INSTRUCTION": 3,
+        "PREV_INSTRUCTION": 4,
         "UPDATE_INSTRUCTIONS": 1
     },
     "capabilities": [

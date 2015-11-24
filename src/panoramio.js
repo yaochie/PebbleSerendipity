@@ -17,24 +17,35 @@ function stripHtmlTags(str) {
 }
 
 function beginNavigation(route) {
-    instructionCounter = 0;
+    instructionCounter = -1;
     var warnings = route.warnings;
     console.log("warnings: " + JSON.stringify(warnings));
     navInstructions = route.legs[0].steps;
     var endAddress = route.legs[0].end_address;
     console.log(endAddress);
-    updateInstructions(endAddress);
+    sendNextInstruction(endAddress);
     navigator.geolocation.watchPosition(updateLocSuccess, updateLocError, updateLocOptions);
 }
 
-function updateInstructions(destination) {
+function sendPrevInstruction(destination) {
+    instructionCounter--;
+    if (instructionCounter >= 0) {
+        Pebble.sendAppMessage({
+            'DESTINATION': String(destination),
+            'DIRECTIONS': stripHtmlTags(String(navInstructions[instructionCounter].html_instructions))
+        });
+        console.log("sent instructions: " + stripHtmlTags(navInstructions[instructionCounter].html_instructions));
+    }
+}
+
+function sendNextInstruction(destination) {
+    instructionCounter++;
     if (instructionCounter < navInstructions.length) { 
         Pebble.sendAppMessage({
             'DESTINATION': String(destination),
             'DIRECTIONS': stripHtmlTags(String(navInstructions[instructionCounter].html_instructions))
         });
         console.log("sent instructions: " + stripHtmlTags(navInstructions[instructionCounter].html_instructions));
-        instructionCounter++;
     }
 }
 
@@ -118,7 +129,7 @@ function nearWaypoint() {
 function updateLocSuccess(pos) {
     coordinates = pos.coords;
     if (nearWaypoint()) {
-        updateInstructions();
+        //sendNextInstruction();
     }
 }
 
@@ -137,8 +148,12 @@ Pebble.addEventListener("appmessage", function(e) {
     if ('INIT_DIRECTIONS' in e.payload) {
         navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
     } else if ('UPDATE_INSTRUCTIONS' in e.payload) {
-        updateInstructions();
+        sendNextInstruction();
     } else if ('GET_LOCATION' in e.payload) {
         navigator.geolocation.getCurrentPosition(updateLocSuccess, updateLocError, locationOptions);
+    } else if ('NEXT_INSTRUCTION' in e.payload) {
+        sendNextInstruction();
+    } else if ('PREV_INSTRUCTION' in e.payload) {
+        sendPrevInstruction();
     }
 });
