@@ -111,7 +111,7 @@ function locationError(err) {
 
 Pebble.addEventListener("ready", function(e) {
     console.log('Javascript app ready and running!');
-    setRange(0.5);
+    setRange(0.04);
 });
 
 Pebble.addEventListener("appmessage", function(e) {
