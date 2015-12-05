@@ -94,12 +94,12 @@ void update_longitude(const char *new_long) {
 }
 
 void update_destination(const char *new_des) {
-    snprintf(s_destination_buffer, sizeof(s_destination_buffer), "%s", new_dir);
+    snprintf(s_destination_buffer, sizeof(s_destination_buffer), "%s", new_des);
     if (s_destination) text_layer_set_text(s_destination, s_destination_buffer);
 }
 
 void update_directions(const char *new_dir) {
-    snprintf(s_current_instruction_buffer, sizeof(s_current_instruction_buffer), "%s", new_des);
+    snprintf(s_current_instruction_buffer, sizeof(s_current_instruction_buffer), "%s", new_dir);
     if (s_current_instruction) text_layer_set_text(s_current_instruction, s_current_instruction_buffer);
 }
 

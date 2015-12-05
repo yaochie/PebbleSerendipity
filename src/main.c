@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "navigation.h"
+#include "options_window.h"
 #include "message_handling.h"
 
 static Window *s_main_window;
@@ -8,45 +9,6 @@ static TextLayer *s_selected_text;
 
 static SimpleMenuSection s_menu_list;
 static SimpleMenuItem items[2];
-
-static Window *s_popup_window;
-static TextLayer *s_popup_text;
-
-enum popupTypes {
-    RANDOM,
-    SELECTED,
-};
-
-static void selected_load(Window *window) {
-    Layer* window_layer = window_get_root_layer(window);
-    
-    s_popup_text = text_layer_create(layer_get_bounds(window_layer));
-    text_layer_set_background_color(s_popup_text, GColorClear);
-    text_layer_set_font(s_popup_text, fonts_get_system_font(FONT_KEY_GOTHIC_28));
-    
-    text_layer_set_text(s_popup_text, "User choice has been selected!");
-    
-    layer_add_child(window_layer, text_layer_get_layer(s_popup_text));
-}
-
-static void selected_unload(Window *window) {
-    text_layer_destroy(s_popup_text);
-}
-
-
-static void init_popup_window(enum popupTypes type) {
-    s_popup_window = window_create();
-    
-    if (type == SELECTED) {
-        window_set_window_handlers(s_popup_window, (WindowHandlers) {
-            .load = selected_load,
-            .unload = selected_unload,
-        });
-    }
-    
-    window_stack_push(s_popup_window, true);
-}
-
 
 static void menu_select(int index, void *context) {
     //print title below!
@@ -58,7 +20,7 @@ static void menu_select(int index, void *context) {
     if (index == 0) {
         init_navigation_window();
     } else {
-        init_popup_window(SELECTED);
+        init_options_window();
     }
 }
 
