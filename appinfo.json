@@ -1,19 +1,24 @@
 {
     "appKeys": {
-        "COORDS_LAT": 0,
-        "COORDS_LONG": 1
+        "COORDS_LAT": 10,
+        "COORDS_LONG": 11,
+        "DESTINATION": 13,
+        "DIRECTIONS": 12,
+        "INIT_DIRECTIONS": 0,
+        "NEXT_INSTRUCTION": 1,
+        "PREV_INSTRUCTION": 2
     },
     "capabilities": [
         "location"
     ],
     "companyName": "yaochisite@gmail.com",
-    "longName": "Panoramio Get",
+    "longName": "Serendipity",
     "projectType": "native",
     "resources": {
         "media": []
     },
     "sdkVersion": "3",
-    "shortName": "Panoramio Get",
+    "shortName": "Serendipity",
     "targetPlatforms": [
         "aplite",
         "basalt",
