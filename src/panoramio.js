@@ -30,11 +30,11 @@ function sendCurrInstruction(destination) {
         if (destination) {
             Pebble.sendAppMessage({
                 'DESTINATION': String(destination),
-                'DIRECTIONS': stripHtmlTags(String(navInstructions[instructionCounter].html_instructions))
+                'DIRECTIONS': stripHtmlTags(String(instructionCounter+1) + ": " + String(navInstructions[instructionCounter].html_instructions))
             });
         } else {
             Pebble.sendAppMessage({
-                'DIRECTIONS': stripHtmlTags(String(navInstructions[instructionCounter].html_instructions))
+                'DIRECTIONS': stripHtmlTags(String(instructionCounter+1) + ": " + String(navInstructions[instructionCounter].html_instructions))
             });
         }
         console.log("sent instructions: " + stripHtmlTags(navInstructions[instructionCounter].html_instructions));
@@ -111,7 +111,7 @@ function locationError(err) {
 
 Pebble.addEventListener("ready", function(e) {
     console.log('Javascript app ready and running!');
-    setRange(0.5);
+    setRange(0.04);
 });
 
 Pebble.addEventListener("appmessage", function(e) {
@@ -120,10 +120,14 @@ Pebble.addEventListener("appmessage", function(e) {
     if ('INIT_DIRECTIONS' in e.payload) {
         navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
     } else if ('NEXT_INSTRUCTION' in e.payload) {
-        instructionCounter++;
-        sendCurrInstruction();
+        if (instructionCounter < navInstructions.length-1) {
+            instructionCounter++;
+            sendCurrInstruction();
+        }
     } else if ('PREV_INSTRUCTION' in e.payload) {
-        instructionCounter++;
-        sendCurrInstruction();
+        if (instructionCounter > 0) {
+            instructionCounter--;
+            sendCurrInstruction();
+        }
     }
 });
