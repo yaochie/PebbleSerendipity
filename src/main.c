@@ -5,17 +5,11 @@
 
 static Window *s_main_window;
 static SimpleMenuLayer *s_main_menu_layer;
-static TextLayer *s_selected_text;
 
 static SimpleMenuSection s_menu_list;
 static SimpleMenuItem items[2];
 
 static void menu_select(int index, void *context) {
-    //print title below!
-    if ((uint32_t)index <= s_menu_list.num_items) {
-        text_layer_set_text(s_selected_text, s_menu_list.items[index].title);
-    }
-    
     //open new window
     if (index == 0) {
         init_navigation_window();
@@ -37,8 +31,6 @@ static void init_menu() {
 static void main_window_load(Window *window) {
     //load main menu
     Layer* window_layer = window_get_root_layer(window);
-    s_selected_text = text_layer_create(GRect(0, 90, 144, 40));
-    text_layer_set_text(s_selected_text, "Selection goes here");
     
     init_menu();
     s_main_menu_layer = simple_menu_layer_create(GRect(0, 0, 144, 168), window, &s_menu_list, 2, NULL);
@@ -46,7 +38,6 @@ static void main_window_load(Window *window) {
         APP_LOG(APP_LOG_LEVEL_ERROR, "Could not create simple menu!");
     } else {
         layer_add_child(window_layer, simple_menu_layer_get_layer(s_main_menu_layer));
-        layer_add_child(window_layer, text_layer_get_layer(s_selected_text));
     }
     
     init_message_handling();
@@ -55,7 +46,6 @@ static void main_window_load(Window *window) {
 static void main_window_unload(Window *window) {
     //destroy main menu
     simple_menu_layer_destroy(s_main_menu_layer);
-    text_layer_destroy(s_selected_text);
 }
 
 static void init() {

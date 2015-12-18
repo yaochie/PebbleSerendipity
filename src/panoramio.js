@@ -12,6 +12,7 @@ function setRange(newRange) {
 
 function stripHtmlTags(str) {
     //note: not secure, only works on GMaps html instructions, not in general
+    console.log(str);
     return str.replace(/<\/?[^>]+(>|$)/g, "");
 }
 

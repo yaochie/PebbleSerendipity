@@ -1,31 +1,37 @@
 #include <pebble.h>
 #include "options_window.h"
+#include "selection_layer.h"
 
 static Window *s_options_window;
-static TextLayer *s_popup_text;
+static Layer *s_selection;
 
-static void selected_load(Window *window) {
-    Layer* window_layer = window_get_root_layer(window);
-    
-    s_popup_text = text_layer_create(layer_get_bounds(window_layer));
-    text_layer_set_background_color(s_popup_text, GColorClear);
-    text_layer_set_font(s_popup_text, fonts_get_system_font(FONT_KEY_GOTHIC_28));
-    
-    text_layer_set_text(s_popup_text, "User choice has been selected!");
-    
-    layer_add_child(window_layer, text_layer_get_layer(s_popup_text));
+static char *labels[] = {"Min", "Max"};
+
+static void selection_increment(int index, void *context) {
+    OptionsData *data = (OptionsData*)context;
+    if (data) {
+    }
 }
 
-static void selected_unload(Window *window) {
-    text_layer_destroy(s_popup_text);
+static void options_load(Window *window) {
+    Layer* window_layer = window_get_root_layer(window);
+    Layer *s_selection = selection_layer_create(layer_get_bounds(window_layer));
+    
+    selection_layer_set_click_config_from_window(s_selection, window);
+    
+    layer_add_child(window_layer, s_selection);
+}
+
+static void options_unload(Window *window) {
+    selection_layer_destroy(s_selection);
 }
 
 void init_options_window() {
     s_options_window = window_create();
     
     window_set_window_handlers(s_options_window, (WindowHandlers) {
-        .load = selected_load,
-        .unload = selected_unload,
+        .load = options_load,
+        .unload = options_unload,
     });
     
     window_stack_push(s_options_window, true);

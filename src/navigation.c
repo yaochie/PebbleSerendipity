@@ -107,6 +107,6 @@ void clear_loading_placeholder() {
     text_layer_set_text(s_loading_placeholder, "");
 }
 
-bool waiting_for_nav_loading() {
+bool is_waiting_for_nav_loading() {
     return strncmp(text_layer_get_text(s_loading_placeholder), "", 1) != 0;
 }

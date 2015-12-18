@@ -13,4 +13,4 @@ void update_destination(const char *new_des);
 void update_directions(const char *new_dir);
 void clear_loading_placeholder();
 
-bool waiting_for_nav_loading();
+bool is_waiting_for_nav_loading();

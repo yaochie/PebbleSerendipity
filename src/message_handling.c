@@ -56,7 +56,7 @@ static void sync_changed_handler(const uint32_t key, const Tuple *new_tuple, con
     default:
         break;
     }
-    if (loadedCoords && waiting_for_nav_loading()) clear_loading_placeholder();
+    if (loadedCoords && is_waiting_for_nav_loading()) clear_loading_placeholder();
 }
 
 void init_message_handling() {
