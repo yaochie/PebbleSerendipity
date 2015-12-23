@@ -5,19 +5,46 @@
 static AppSync s_sync;
 static uint8_t s_sync_buffer[256];
 
-void send_message(int messageVal) {
-    DictionaryIterator *iter;
-    app_message_outbox_begin(&iter);
+static DictionaryIterator *msgIter;
+static bool dictOpen;
+
+void start_message() {
+    app_message_outbox_begin(&msgIter);
     
-    if (!iter) {
-        return;
+    if (!msgIter) {
+        APP_LOG(APP_LOG_LEVEL_ERROR, "Could not init message!");
+        dictOpen = false;
+    } else {
+        dictOpen = true;
     }
-    
-    int value = 0; //not important, key value (messageVal) is the actual payload
-    dict_write_int(iter, messageVal, &value, sizeof(int), true);
-    dict_write_end(iter);
-    
-    app_message_outbox_send();
+}
+
+void add_to_message(int messageKey, int messageVal) {
+    if (dictOpen) {
+        dict_write_int(msgIter, messageKey, &messageVal, sizeof(int), true);
+    } else {
+        APP_LOG(APP_LOG_LEVEL_ERROR, "Tried to add to unopened message.");
+    }
+}
+
+bool message_open() {
+    return dictOpen;
+}
+
+void send_message() {
+    if (dictOpen) {
+        dict_write_end(msgIter);
+        app_message_outbox_send();
+        dictOpen = false;
+    } else {
+        APP_LOG(APP_LOG_LEVEL_ERROR, "Tried to send unopened message.");
+    }
+}
+
+void send_single_message(int messageKey, int messageVal) {
+    start_message();
+    add_to_message(messageKey, messageVal);
+    send_message();
 }
 
 static void sync_error_handler(DictionaryResult dict_error, AppMessageResult app_message_error, void *context) {

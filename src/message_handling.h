@@ -9,4 +9,8 @@
 
 void init_message_handling();
 void deinit_message_handling();
-void send_message(int messageVal);
+void start_message();
+void add_to_message(int messageKey, int messageVal);
+bool message_open();
+void send_message();
+void send_single_message(int messageKey, int messageVal);

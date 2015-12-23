@@ -13,6 +13,8 @@
 #define DEFAULT_MIN 0
 #define DEFAULT_MAX 30
 
+#define SET_RANGE 3
+
 typedef struct SelectionLayerCallbacks {
     void *increment;
     void *decrement;

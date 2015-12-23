@@ -4,7 +4,7 @@
 #define NEXT_INSTRUCTION 1
 #define PREV_INSTRUCTION 2
 
-void init_navigation_window();
+void init_navigation_window(bool random);
 void deinit_navigation_window();
 
 void update_latitude(const char *new_lat);

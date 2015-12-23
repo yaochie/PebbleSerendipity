@@ -6,8 +6,8 @@ var instructionCounter = -1;
 
 var locationOptions = {'timeout': 10000, 'maximumAge': 60000};
 
-function setRange(newRange) {
-    range = newRange;
+function setRange(minutes) {
+    range = minutes*0.03;
 }
 
 function stripHtmlTags(str) {
@@ -112,7 +112,7 @@ function locationError(err) {
 
 Pebble.addEventListener("ready", function(e) {
     console.log('Javascript app ready and running!');
-    setRange(0.04);
+    setRange(30);
 });
 
 Pebble.addEventListener("appmessage", function(e) {
@@ -130,5 +130,7 @@ Pebble.addEventListener("appmessage", function(e) {
             instructionCounter--;
             sendCurrInstruction();
         }
+    } else if ('SET_RANGE' in e.payload) {
+        setRange(e.payload.SET_RANGE);
     }
 });

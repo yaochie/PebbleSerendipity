@@ -1,5 +1,7 @@
 #include <pebble.h>
+#include "navigation.h"
 #include "selection_layer.h"
+#include "message_handling.h"
 
 static void selection_layer_draw_rectangles(Layer *layer, GContext *ctx) {
     SelectionLayerData *data = layer_get_data(layer);
@@ -82,7 +84,17 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     if (data->selected_cell_idx+1 < NUM_CELLS) {
         data->selected_cell_idx++;
         layer_mark_dirty(layer);
+    } else {
+        //set range and open nav window
+        start_message();
+        add_to_message(SET_RANGE, data->nums[data->selected_cell_idx]);
+        init_navigation_window(false);
     }
+}
+
+void start_nav() {
+    app_message_deregister_callbacks();
+    init_navigation_window(false);
 }
 
 static void back_click_handler(ClickRecognizerRef recognizer, void *context) {

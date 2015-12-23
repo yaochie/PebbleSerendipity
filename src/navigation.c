@@ -14,14 +14,16 @@ static char s_lon_buffer[32];
 static char s_destination_buffer[64];
 static char s_current_instruction_buffer[128];
 
+static bool defaultRange;
+
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     //get previous instruction
-    send_message(PREV_INSTRUCTION);
+    send_single_message(PREV_INSTRUCTION, 0);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     //get next instruction
-    send_message(NEXT_INSTRUCTION);
+    send_single_message(NEXT_INSTRUCTION, 0);
 }
 
 static void nav_click_config_provider(void *context) {
@@ -32,20 +34,26 @@ static void nav_click_config_provider(void *context) {
 static void nav_load(Window *window) {
     Layer* window_layer = window_get_root_layer(window);
     
-    s_latitude = text_layer_create(GRect(0, 120, 144, 20));
-    s_longitude = text_layer_create(GRect(0, 135, 144, 28));
+    s_latitude = text_layer_create(GRect(0, 130, 144, 20));
+    s_longitude = text_layer_create(GRect(0, 145, 144, 25));
     text_layer_set_background_color(s_latitude, GColorClear);
     text_layer_set_background_color(s_longitude, GColorClear);
     text_layer_set_font(s_latitude, fonts_get_system_font(FONT_KEY_GOTHIC_14));
     text_layer_set_font(s_longitude, fonts_get_system_font(FONT_KEY_GOTHIC_14));
     
-    s_loading_placeholder = text_layer_create(GRect(0, 40, 144, 80));
+    s_loading_placeholder = text_layer_create(GRect(0, 40, 144, 90));
     text_layer_set_background_color(s_loading_placeholder, GColorClear);
     text_layer_set_font(s_loading_placeholder, fonts_get_system_font(FONT_KEY_GOTHIC_28));
-    text_layer_set_text(s_loading_placeholder, "Getting random location...");
+    
+    bool isDefault = *(bool*)window_get_user_data(window);
+    if (isDefault) {
+        text_layer_set_text(s_loading_placeholder, "Getting random location...");
+    } else {
+        text_layer_set_text(s_loading_placeholder, "Getting location...");
+    }
     
     s_destination = text_layer_create(GRect(0, 0, 144, 40));
-    s_current_instruction = text_layer_create(GRect(0, 40, 144, 70));
+    s_current_instruction = text_layer_create(GRect(0, 40, 144, 90));
     text_layer_set_background_color(s_destination, GColorClear);
     text_layer_set_background_color(s_current_instruction, GColorClear);
     text_layer_set_font(s_destination, fonts_get_system_font(FONT_KEY_GOTHIC_14));
@@ -57,7 +65,12 @@ static void nav_load(Window *window) {
     layer_add_child(window_layer, text_layer_get_layer(s_destination));
     layer_add_child(window_layer, text_layer_get_layer(s_current_instruction));
     
-    send_message(INIT_DIRECTIONS);
+    if (isDefault) {
+        send_single_message(INIT_DIRECTIONS, 0);
+    } else {
+        add_to_message(INIT_DIRECTIONS, 0);
+        send_message();
+    }
 }
 
 static void nav_unload(Window *window) {
@@ -68,8 +81,10 @@ static void nav_unload(Window *window) {
     text_layer_destroy(s_loading_placeholder);
 }
 
-void init_navigation_window() {
+void init_navigation_window(bool random) {
     s_nav_window = window_create();
+    defaultRange = random;
+    window_set_user_data(s_nav_window, &defaultRange);
     window_set_window_handlers(s_nav_window, (WindowHandlers) {
         .load = nav_load,
         .unload = nav_unload,

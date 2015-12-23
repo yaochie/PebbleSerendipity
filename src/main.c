@@ -12,7 +12,7 @@ static SimpleMenuItem items[2];
 static void menu_select(int index, void *context) {
     //open new window
     if (index == 0) {
-        init_navigation_window();
+        init_navigation_window(true);
     } else {
         init_options_window();
     }
