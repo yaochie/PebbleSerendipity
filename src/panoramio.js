@@ -13,7 +13,9 @@ function setRange(minutes) {
 function stripHtmlTags(str) {
     //note: not secure, only works on GMaps html instructions, not in general
     console.log(str);
-    return str.replace(/<\/?[^>]+(>|$)/g, "");
+    var newStr = str.replace(/<\/?div[^>]*(>)/g, "\n");
+    newStr = newStr.replace(/<\/?[^>]+(>)/g, "");
+    return newStr;
 }
 
 function beginNavigation(route) {
