@@ -3,6 +3,14 @@
 #include "selection_layer.h"
 #include "message_handling.h"
 
+static GPath *s_up_tri_path_ptr = NULL;
+static GPath *s_down_tri_path_ptr = NULL;
+
+static const GPathInfo TRIANGLE_PATH = {
+    .num_points = 3,
+    .points = (GPoint[]) {{12,0}, {24,8}, {0,8}}
+};
+
 static void selection_layer_draw_rectangles(Layer *layer, GContext *ctx) {
     SelectionLayerData *data = layer_get_data(layer);
     for (int i=0; i<NUM_CELLS; i++) {
@@ -32,7 +40,9 @@ static void selection_layer_draw_text(Layer *layer, GContext *ctx) {
 }
 
 static void selection_layer_draw_arrows(Layer *layer, GContext *ctx) {
-    
+    graphics_context_set_fill_color(ctx, GColorBlack);
+    gpath_draw_filled(ctx, s_up_tri_path_ptr);
+    gpath_draw_filled(ctx, s_down_tri_path_ptr);
 }
 
 static void selection_layer_draw_labels(Layer *layer, GContext *ctx) {
@@ -44,7 +54,7 @@ static void selection_layer_draw(Layer *layer, GContext *ctx) {
     //Draw relative to bounds?
     selection_layer_draw_rectangles(layer, ctx);
     selection_layer_draw_text(layer, ctx);
-    selection_layer_draw_arrows(layer, ctx);
+    //selection_layer_draw_arrows(layer, ctx);
     selection_layer_draw_labels(layer, ctx);
 }
 
@@ -139,17 +149,23 @@ static void selection_layer_init_boxes(Layer *layer) {
     
     for (int i=0; i<NUM_CELLS; i++) {
         int x = (bounds.size.w - total_cell_width)/2 + i*(data->cell_width + data->cell_padding);
-        int y = (bounds.size.h - data->cell_height)/2;
+        int y = (bounds.size.h - data->cell_height/2)/2;
         data->boxes[i] = GRect(x, y, data->cell_width, data->cell_height);
     }
 }
 
 static void selection_layer_init_data(Layer *layer) {
     SelectionLayerData *data = layer_get_data(layer);
-    data->nums[0] = DEFAULT_MIN;
-    data->nums[1] = DEFAULT_MAX;
+    data->nums[0] = DEFAULT_MAX;
     snprintf(data->text[0], MAX_NUM_LENGTH, "%d", data->nums[0]);
-    snprintf(data->text[1], MAX_NUM_LENGTH, "%d", data->nums[1]);
+}
+
+static void init_paths() {
+    s_up_tri_path_ptr = gpath_create(&TRIANGLE_PATH);
+    gpath_move_to(s_up_tri_path_ptr, GPoint(60, 40));
+    s_down_tri_path_ptr = gpath_create(&TRIANGLE_PATH);
+    gpath_rotate_to(s_down_tri_path_ptr, TRIG_MAX_ANGLE/2);
+    gpath_move_to(s_down_tri_path_ptr, GPoint(60, 100));
 }
 
 /*
@@ -176,6 +192,8 @@ Layer* selection_layer_create(GRect frame) {
     selection_layer_init_boxes(layer);
     selection_layer_init_data(layer);
     
+    init_paths();
+    
     //Set draw callbacks for underlying texts
     //Draw arrows above and below
     //return selection layer
@@ -186,4 +204,6 @@ Layer* selection_layer_create(GRect frame) {
 
 void selection_layer_destroy(Layer *layer) {
     layer_destroy(layer);
+    gpath_destroy(s_up_tri_path_ptr);
+    gpath_destroy(s_down_tri_path_ptr);
 }

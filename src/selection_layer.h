@@ -7,10 +7,9 @@
 #define DEFAULT_SELECTED_INDEX 0
 #define DEFAULT_FONT FONT_KEY_GOTHIC_28_BOLD
 
-#define NUM_CELLS 2
+#define NUM_CELLS 1
 #define MAX_NUM_LENGTH 4
 
-#define DEFAULT_MIN 0
 #define DEFAULT_MAX 30
 
 #define SET_RANGE 3

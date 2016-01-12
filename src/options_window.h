@@ -11,12 +11,14 @@ next box with center button
 prev box with prev button
 */
 
-#define NUM_CELLS 2
+/*
+#define NUM_CELLS 1
 #define MAX_NUM_LENGTH 4
 
 typedef struct OptionsData {
     int nums[NUM_CELLS];
     char text[NUM_CELLS][MAX_NUM_LENGTH];
 } OptionsData;
+*/
 
 void init_options_window();

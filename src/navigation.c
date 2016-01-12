@@ -81,9 +81,9 @@ static void nav_unload(Window *window) {
     text_layer_destroy(s_loading_placeholder);
 }
 
-void init_navigation_window(bool random) {
+void init_navigation_window(bool isRandom) {
     s_nav_window = window_create();
-    defaultRange = random;
+    defaultRange = isRandom;
     window_set_user_data(s_nav_window, &defaultRange);
     window_set_window_handlers(s_nav_window, (WindowHandlers) {
         .load = nav_load,
