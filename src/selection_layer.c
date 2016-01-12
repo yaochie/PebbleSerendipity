@@ -54,7 +54,7 @@ static void selection_layer_draw(Layer *layer, GContext *ctx) {
     //Draw relative to bounds?
     selection_layer_draw_rectangles(layer, ctx);
     selection_layer_draw_text(layer, ctx);
-    //selection_layer_draw_arrows(layer, ctx);
+    selection_layer_draw_arrows(layer, ctx);
     selection_layer_draw_labels(layer, ctx);
 }
 
@@ -162,10 +162,10 @@ static void selection_layer_init_data(Layer *layer) {
 
 static void init_paths() {
     s_up_tri_path_ptr = gpath_create(&TRIANGLE_PATH);
-    gpath_move_to(s_up_tri_path_ptr, GPoint(60, 40));
+    gpath_move_to(s_up_tri_path_ptr, GPoint(60, 60));
     s_down_tri_path_ptr = gpath_create(&TRIANGLE_PATH);
     gpath_rotate_to(s_down_tri_path_ptr, TRIG_MAX_ANGLE/2);
-    gpath_move_to(s_down_tri_path_ptr, GPoint(60, 100));
+    gpath_move_to(s_down_tri_path_ptr, GPoint(84, 127));
 }
 
 /*

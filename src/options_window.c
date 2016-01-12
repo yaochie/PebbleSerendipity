@@ -10,7 +10,7 @@ static void options_load(Window *window) {
     Layer* window_layer = window_get_root_layer(window);
     Layer *s_selection = selection_layer_create(layer_get_bounds(window_layer));
     
-    TextLayer *s_label = text_layer_create(GRect(0, 38, 144, 35));
+    TextLayer *s_label = text_layer_create(GRect(0, 20, 144, 35));
     text_layer_set_text(s_label, "Max");
     text_layer_set_font(s_label, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
     text_layer_set_text_alignment(s_label, GTextAlignmentCenter);
