@@ -9,6 +9,7 @@
 
 #define NUM_CELLS 1
 #define MAX_NUM_LENGTH 4
+#define MAX_LABEL_LENGTH 5
 
 #define DEFAULT_MAX 30
 
@@ -33,19 +34,25 @@ typedef struct SelectionLayerData {
     
     int selected_cell_idx;
     
-    SelectionLayerCallbacks callbacks;
+    //SelectionLayerCallbacks callbacks;
     
     GRect boxes[NUM_CELLS];
     void *context;
     int nums[NUM_CELLS];
     char text[NUM_CELLS][MAX_NUM_LENGTH];
+    char labels[NUM_CELLS][MAX_LABEL_LENGTH];
+    int label_offset;
     
-    GFont font;
+    GFont number_font;
+    GFont label_font;
     GColor active_background_color;
+    GColor active_font_color;
     GColor inactive_background_color;
+    GColor inactive_font_color;
+    GColor box_stroke_color;
 } SelectionLayerData;
 
 void selection_layer_set_click_config_from_window(Layer *layer, Window *window);
 
-Layer *selection_layer_create(GRect frame);
+Layer *selection_layer_create(GRect frame, const char *labels[]);
 void selection_layer_destroy(Layer *layer);

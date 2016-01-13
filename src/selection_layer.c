@@ -11,16 +11,17 @@ static const GPathInfo TRIANGLE_PATH = {
     .points = (GPoint[]) {{12,0}, {24,8}, {0,8}}
 };
 
+//static const char *labels[] = {"Max",};
+
 static void selection_layer_draw_rectangles(Layer *layer, GContext *ctx) {
     SelectionLayerData *data = layer_get_data(layer);
     for (int i=0; i<NUM_CELLS; i++) {
         if (i == data->selected_cell_idx) {
-            graphics_context_set_fill_color(ctx, GColorClear);
-            graphics_context_set_stroke_color(ctx, GColorBlack);
+            graphics_context_set_fill_color(ctx, data->active_background_color);
         } else {
-            graphics_context_set_fill_color(ctx, GColorBlack);
-            graphics_context_set_stroke_color(ctx, GColorClear);
+            graphics_context_set_fill_color(ctx, data->inactive_background_color);
         }
+        graphics_context_set_stroke_color(ctx, data->box_stroke_color);
         
         GRect to_fill = data->boxes[i];
         graphics_fill_rect(ctx, to_fill, 0, GCornerNone);
@@ -31,11 +32,11 @@ static void selection_layer_draw_rectangles(Layer *layer, GContext *ctx) {
 static void selection_layer_draw_text(Layer *layer, GContext *ctx) {
     SelectionLayerData *data = layer_get_data(layer);
     for (int i=0; i<NUM_CELLS; i++) {
-        if (i == data->selected_cell_idx) graphics_context_set_text_color(ctx, GColorBlack);
-        else graphics_context_set_text_color(ctx, GColorClear);
+        if (i == data->selected_cell_idx) graphics_context_set_text_color(ctx, data->active_font_color);
+        else graphics_context_set_text_color(ctx, data->inactive_font_color);
         
         GRect box = data->boxes[i];
-        graphics_draw_text(ctx, data->text[i], data->font, box, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+        graphics_draw_text(ctx, data->text[i], data->number_font, box, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
     }
 }
 
@@ -47,7 +48,12 @@ static void selection_layer_draw_arrows(Layer *layer, GContext *ctx) {
 
 static void selection_layer_draw_labels(Layer *layer, GContext *ctx) {
     SelectionLayerData *data = layer_get_data(layer);
-    (void)data;
+    for (int i=0; i<NUM_CELLS; i++) {
+        GRect box = data->boxes[i];
+        
+        box.origin.y -= data->label_offset;
+        graphics_draw_text(ctx, data->labels[i], data->label_font, box, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    }
 }
 
 static void selection_layer_draw(Layer *layer, GContext *ctx) {
@@ -127,8 +133,10 @@ static void selection_click_config_provider(Layer *layer) {
     window_set_click_context(BUTTON_ID_SELECT, layer);
     window_set_click_context(BUTTON_ID_BACK, layer);
     
-    window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
-    window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
+    //TODO: handle holding down up/down buttons
+    
+    window_single_repeating_click_subscribe(BUTTON_ID_UP, 200, up_click_handler);
+    window_single_repeating_click_subscribe(BUTTON_ID_DOWN, 200, down_click_handler);
     window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
     window_single_click_subscribe(BUTTON_ID_BACK, back_click_handler);
 }
@@ -154,10 +162,11 @@ static void selection_layer_init_boxes(Layer *layer) {
     }
 }
 
-static void selection_layer_init_data(Layer *layer) {
+static void selection_layer_init_data(Layer *layer, const char **labels) {
     SelectionLayerData *data = layer_get_data(layer);
     data->nums[0] = DEFAULT_MAX;
     snprintf(data->text[0], MAX_NUM_LENGTH, "%d", data->nums[0]);
+    strncpy(data->labels[0], labels[0], MAX_LABEL_LENGTH);
 }
 
 static void init_paths() {
@@ -179,7 +188,7 @@ Text of actual number
 Different background color depending on whether it's selected
 */
 
-Layer* selection_layer_create(GRect frame) {
+Layer* selection_layer_create(GRect frame, const char **labels) {
     Layer *layer = layer_create_with_data(frame, sizeof(SelectionLayerData));
     
     SelectionLayerData *data = layer_get_data(layer);
@@ -187,10 +196,19 @@ Layer* selection_layer_create(GRect frame) {
     data->cell_height = DEFAULT_CELL_HEIGHT;
     data->cell_padding = DEFAULT_CELL_PADDING;
     data->selected_cell_idx = DEFAULT_SELECTED_INDEX;
-    data->font = fonts_get_system_font(DEFAULT_FONT);
+    data->number_font = fonts_get_system_font(DEFAULT_FONT);
+    data->label_font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+    
+    data->label_offset = 50;
+    
+    data->active_background_color = GColorClear;
+    data->active_font_color = GColorBlack;
+    data->inactive_background_color = GColorBlack;
+    data->inactive_font_color = GColorClear;
+    data->box_stroke_color = GColorBlack;
     
     selection_layer_init_boxes(layer);
-    selection_layer_init_data(layer);
+    selection_layer_init_data(layer, labels);
     
     init_paths();
     

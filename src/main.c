@@ -33,7 +33,7 @@ static void main_window_load(Window *window) {
     Layer* window_layer = window_get_root_layer(window);
     
     init_menu();
-    s_main_menu_layer = simple_menu_layer_create(GRect(0, 0, 144, 168), window, &s_menu_list, 2, NULL);
+    s_main_menu_layer = simple_menu_layer_create(GRect(0, 0, 144, 168), window, &s_menu_list, 1, NULL);
     if (s_main_menu_layer == NULL) {
         APP_LOG(APP_LOG_LEVEL_ERROR, "Could not create simple menu!");
     } else {
